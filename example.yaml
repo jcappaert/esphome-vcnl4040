@@ -1,0 +1,60 @@
+esphome:
+  name: vcnl4040-example
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: arduino
+
+
+# Enable logging
+logger:
+
+web_server:
+  port: 80
+
+api:
+
+ota:
+  platform: esphome
+
+wifi:
+  networks:
+  - ssid: "ssid"
+    password: "password"
+
+  ap:
+
+captive_portal:
+
+external_components:
+  - source: 
+      type: git
+      url: https://github.com/jcappaert/esphome-vcnl4040
+    components: [vcnl4040]
+
+# -------------------- I2C (VCNL4040) --------------------
+i2c:
+  sda: GPIO4
+  scl: GPIO5
+  scan: true
+
+# VCNL4040: platform-style usage 
+sensor:
+  - platform: vcnl4040
+    address: 0x60
+    update_interval: 50ms
+    ambient:
+      name: "LED Bar Ambient Light"
+      id: als
+      filters:
+        - sliding_window_moving_average:
+            window_size: 6
+            send_every: 6
+    proximity:
+      name: "LED Bar Proximity"
+      id: prox
+      filters:
+        - sliding_window_moving_average:
+            window_size: 5
+            send_every: 1
