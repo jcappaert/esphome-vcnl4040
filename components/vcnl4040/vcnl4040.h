@@ -22,13 +22,19 @@ class VCNL4040Component : public PollingComponent, public i2c::I2CDevice {
  public:
   void set_prox_sensor(sensor::Sensor *s) { this->prox_sensor_ = s; }
   void set_als_sensor(sensor::Sensor *s)  { this->als_sensor_  = s; }
+  // Allow overriding proximity configuration registers (datasheet-defined)
+  void set_prox_config(uint16_t conf1_2, uint16_t conf3_ms, uint16_t cancellation) {
+    ps_conf1_2_ = conf1_2;
+    ps_conf3_ms_ = conf3_ms;
+    ps_cancellation_ = cancellation;
+  }
 
   void setup() override {
     // Minimal enable; tune config as needed.
-    write16_(REG_ALS_CONF, 0x0000);      // ALS enabled
-    write16_(REG_PS_CONF1_2, 0x0000);    // PS enabled (defaults)
-    write16_(REG_PS_CONF3_MS, 0x0000);
-    write16_(REG_PS_CANC, 0x0000);
+    write16_(REG_ALS_CONF, 0x0000);                  // ALS enabled
+    write16_(REG_PS_CONF1_2, ps_conf1_2_);           // PS config (LED current, duty, integration, etc.)
+    write16_(REG_PS_CONF3_MS, ps_conf3_ms_);         // PS config 3 + multi-sampling
+    write16_(REG_PS_CANC, ps_cancellation_);         // PS cancellation (for cover/offset tuning)
   }
 
   void dump_config() override {
@@ -37,6 +43,8 @@ class VCNL4040Component : public PollingComponent, public i2c::I2CDevice {
     LOG_UPDATE_INTERVAL(this);
     LOG_SENSOR("  ", "Proximity", this->prox_sensor_);
     LOG_SENSOR("  ", "Ambient", this->als_sensor_);
+    ESP_LOGCONFIG("vcnl4040", "  PS_CONF1_2=0x%04X PS_CONF3_MS=0x%04X PS_CANC=0x%04X",
+                  ps_conf1_2_, ps_conf3_ms_, ps_cancellation_);
   }
 
   void update() override {
@@ -67,6 +75,10 @@ class VCNL4040Component : public PollingComponent, public i2c::I2CDevice {
  private:
   sensor::Sensor *prox_sensor_{nullptr};
   sensor::Sensor *als_sensor_{nullptr};
+
+  uint16_t ps_conf1_2_{0x0000};
+  uint16_t ps_conf3_ms_{0x0000};
+  uint16_t ps_cancellation_{0x0000};
 };
 
 }  // namespace vcnl4040

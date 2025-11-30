@@ -9,6 +9,9 @@ VCNL4040Component = vcnl4040_ns.class_("VCNL4040Component", cg.PollingComponent,
 
 CONF_PROXIMITY = "proximity"
 CONF_AMBIENT = "ambient"
+CONF_PS_CONF1_2 = "ps_conf1_2"
+CONF_PS_CONF3_MS = "ps_conf3_ms"
+CONF_PS_CANCELLATION = "ps_cancellation"
 DEFAULT_ADDR = 0x60  # 96 decimal
 
 DEPENDENCIES = ["i2c"]
@@ -26,6 +29,9 @@ CONFIG_SCHEMA = (
                 unit_of_measurement="lx",
                 accuracy_decimals=1,
             ),
+            cv.Optional(CONF_PS_CONF1_2, default=0x0000): cv.uint16_t,
+            cv.Optional(CONF_PS_CONF3_MS, default=0x0000): cv.uint16_t,
+            cv.Optional(CONF_PS_CANCELLATION, default=0x0000): cv.uint16_t,
         }
     )
     .extend(i2c.i2c_device_schema(DEFAULT_ADDR))
@@ -44,3 +50,9 @@ async def to_code(config):
     if CONF_AMBIENT in config:
         als = await sensor.new_sensor(config[CONF_AMBIENT])
         cg.add(var.set_als_sensor(als))
+
+    cg.add(var.set_prox_config(
+        config[CONF_PS_CONF1_2],
+        config[CONF_PS_CONF3_MS],
+        config[CONF_PS_CANCELLATION],
+    ))
